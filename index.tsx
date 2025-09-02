@@ -1,0 +1,637 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import { createRoot } from 'react-dom/client';
+import { calculateEducationCorpus } from './calculator.js';
+
+// --- SVG Icon Components ---
+
+const Logo = () => (
+    <svg height="40" viewBox="0 0 160 42" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="NestEd Logo">
+        <title>NestEd Logo</title>
+        <g transform="translate(2, 2)">
+            {/* Abstract 'N' shape representing growth */}
+            {/* Main stem */}
+            <path d="M10 38 V 2" stroke="#1E463A" strokeWidth="4" strokeLinecap="round"/>
+            {/* Arching stem */}
+            <path d="M10 2 C 35 2, 35 38, 35 38" stroke="#1E463A" strokeWidth="4" strokeLinecap="round" fill="none"/>
+            {/* Leaf */}
+            <path d="M35 2 C 43 10, 38 20, 30 22" stroke="#6DB15B" strokeWidth="4" strokeLinecap="round" fill="none"/>
+        </g>
+        <text x="55" y="32" fontFamily="Poppins, sans-serif" fontSize="28" fontWeight="600" fill="#1E463A">NestEd</text>
+    </svg>
+);
+
+
+const PlanIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg> );
+const ConsultIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/><rect width="18" height="18" x="3" y="4" rx="2"/><circle cx="12" cy="10" r="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg> );
+const InvestIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg> );
+const QuoteIcon = () => (<svg width="40" height="32" viewBox="0 0 40 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.6667 32H0L7.61905 0H20L12.6667 32ZM32.6667 32H20L27.619 0H40L32.6667 32Z" fill="currentColor"/></svg>);
+
+const GraduationCapIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+);
+
+const StethoscopeIcon = () => ( // Renamed visually, not in code to avoid breaking usage
+    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <path d="M43.3333 13H32.5C31.2267 13 30.05 12.3033 29.3333 11.2667L24.3333 3.46667C23.6167 2.43 22.44 1.73333 21.1667 1.73333H13C9.51333 1.73333 6.66667 4.58 6.66667 8.06667V13H13C16.4867 13 19.3333 15.8467 19.3333 19.3333V32.5C19.3333 36.02 22.1467 38.8333 25.6667 38.8333H32.5C36.02 38.8333 38.8333 36.02 38.8333 32.5V26C38.8333 22.5133 41.68 19.6667 45.1667 19.6667H47.6667C49.08 19.6667 50.2333 18.5133 50.2333 17.0933V15.1667C50.2333 13.99 49.26 13 48.1 13H43.3333Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M14.0833 22.75H14.1017" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const GlobeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+        <path d="M2 12h20"/>
+    </svg>
+);
+
+const SecurityIcon = () => (
+     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+    </svg>
+);
+
+const AlertTriangleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+);
+
+const CheckCircleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+);
+
+const CalendarCheckIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+        <path d="m9 16 2 2 4-4"></path>
+    </svg>
+);
+
+const MailIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+    </svg>
+);
+
+
+const FutureGrowthIllustration = () => (
+    <svg viewBox="0 0 440 292" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="grad-bg-hero" x1="0" y1="0" x2="440" y2="292" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#F0F8FF" stopOpacity="0"/>
+                <stop offset="1" stopColor="#F0F8FF"/>
+            </linearGradient>
+            <linearGradient id="grad-accent-bar" x1="20" y1="0" x2="20" y2="130.667" gradientUnits="userSpaceOnUse">
+                <stop stopColor="var(--accent-green)"/>
+                <stop offset="1" stopColor="#5a9d4c"/>
+            </linearGradient>
+        </defs>
+        <rect width="440" height="292" rx="20" fill="url(#grad-bg-hero)"/>
+        {/* Bars */}
+        <rect x="80" y="160" width="40" height="50" rx="8" fill="#E9ECEF"/>
+        <rect x="140" y="120" width="40" height="90" rx="8" fill="#E9ECEF"/>
+        <rect x="200" y="80" width="40" height="130" rx="8" fill="url(#grad-accent-bar)"/>
+        <rect x="260" y="140" width="40" height="70" rx="8" fill="#E9ECEF"/>
+        <rect x="320" y="170" width="40" height="40" rx="8" fill="#E9ECEF"/>
+        {/* Dotted Line */}
+        <line x1="40" y1="210" x2="400" y2="210" stroke="#CED4DA" strokeWidth="2" strokeDasharray="4 4"/>
+        {/* Floating Elements */}
+        <g transform="translate(230, 40)">
+            <path d="M21.5 12.3333V20M2.875 12.3333L13.75 7.625L24.625 12.3333L13.75 17.0417L2.875 12.3333Z" stroke="var(--primary-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5.66699 14.25V19.6667C8.79199 22.0833 13.7503 22.0833 16.8753 19.6667V14.25" stroke="var(--primary-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </g>
+        <g transform="translate(350, 60)">
+            <path d="M20 0L4 8L20 16L16 8L20 0Z" fill="#FFC107"/>
+            <circle cx="6" cy="20" r="6" fill="var(--accent-green)"/>
+        </g>
+    </svg>
+);
+
+
+const TargetIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12"cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> );
+const GraphUpIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 21H3V3"/><path d="m18 9-5 5-4-4-3 3"/></svg> );
+const CalendarIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> );
+const DollarIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> );
+
+const ProtectedGrowthIcon = () => (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M26 47.6667C26 47.6667 45.5 39.9556 45.5 26V10.8333L26 4.33331L6.5 10.8333V26C6.5 39.9556 26 47.6667 26 47.6667Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M26 34.6666V23.8333M26 23.8333C28.4233 23.8333 30.7333 22.5111 31.8333 20.3222C32.9333 18.1333 32.6222 15.4222 31.0333 13.4333M26 23.8333C23.5767 23.8333 21.2667 22.5111 20.1667 20.3222C19.0667 18.1333 19.3778 15.4222 20.9667 13.4333" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const DataDrivenMindIcon = () => (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M36.8333 26C36.8333 31.9889 31.9889 36.8333 26 36.8333C20.0111 36.8333 15.1667 31.9889 15.1667 26C15.1667 20.0111 20.0111 15.1667 26 15.1667" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M26 4.33331C28.3889 4.33331 30.3333 6.27776 30.3333 8.66665C30.3333 11.0555 28.3889 13 26 13C23.6111 13 21.6667 11.0555 21.6667 8.66665C21.6667 6.27776 23.6111 4.33331 26 4.33331Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M41.1667 26C41.1667 16.9667 34.3667 8.66665 26 8.66665" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M21.6667 26H21.6875M30.3333 26H30.3542M26 47.6667C31.9889 47.6667 36.8333 42.8222 36.8333 36.8333H15.1667C15.1667 42.8222 20.0111 47.6667 26 47.6667Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M21.6667 26V30.3333M26 21.6667V30.3333M30.3333 23.8333V30.3333" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+
+// --- Asset Allocation Chart Component ---
+const AssetAllocationChart = () => {
+    const series = useMemo(() => [
+        // Order here is for legend and general logic
+        { key: "debt", name: "Debt", color: "#82B1A8" },
+        { key: "multiasset", name: "Multiasset/Commodities", color: "#E3C872" },
+        { key: "flexicap", name: "Flexicap/Hybrid", color: "#A9B0A2" },
+        { key: "midcap", name: "Midcap/Smallcap/Thematic/Int'l", color: "#E59866" },
+    ], []);
+
+    // Visual layering order (back to front) to match the provided image's overlaps
+    const renderOrder = useMemo(() => ["midcap", "flexicap", "multiasset", "debt"], []);
+    
+    // Data traced from the user-provided image to create overlapping area charts
+    const data = useMemo(() => {
+        const midcap =     [25, 24, 23, 22, 20, 18, 15, 12,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0];
+        const flexicap =   [40, 40, 40, 38, 35, 32, 30, 30, 30, 25, 20, 15, 10,  5,  0,  0,  0,  0, 0];
+        const multiasset = [ 0,  0,  5, 12, 18, 22, 23, 20, 18, 25, 40, 50, 45, 38, 30, 20, 10,  5, 0];
+        const debt =       [ 0,  2,  4,  6,  8, 10, 15, 20, 25, 30, 38, 48, 58, 68, 78, 88, 95, 98, 100];
+        
+        return Array.from({ length: 19 }, (_, i) => ({
+            age: i,
+            midcap: midcap[i],
+            flexicap: flexicap[i],
+            multiasset: multiasset[i],
+            debt: debt[i],
+        }));
+    }, []);
+
+
+    const width = 800;
+    const height = 500;
+    const padding = { top: 40, right: 20, bottom: 60, left: 60 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const maxAge = 18;
+    const maxAllocation = 100;
+
+    const xScale = useCallback((age) => padding.left + (age / maxAge) * chartWidth, [chartWidth, padding.left]);
+    const yScale = useCallback((value) => padding.top + chartHeight - (value / maxAllocation) * chartHeight, [chartHeight, padding.top]);
+
+    const getAreaPath = useCallback((chartData, seriesKey) => {
+        const linePoints = chartData.map((p, i) => `${i === 0 ? 'M' : 'L'}${xScale(p.age)},${yScale(p[seriesKey])}`).join(' ');
+        const baseline = yScale(0);
+        const startX = xScale(chartData[0].age);
+        const endX = xScale(chartData[chartData.length - 1].age);
+        return `${linePoints} L${endX},${baseline} L${startX},${baseline} Z`;
+    }, [xScale, yScale]);
+
+    const yAxisLabels = [0, 25, 50, 75, 100];
+    const xAxisLabels = Array.from({ length: 10 }, (_, i) => i * 2);
+    
+    // Reverse series for legend display to match image (Midcap first)
+    const legendSeries = [...series].reverse();
+
+    return (
+        <div className="allocation-chart-container">
+            <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby="chart-title">
+                <title id="chart-title">Asset Allocation by Child's Age</title>
+                
+                <g className="chart-axes">
+                    <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#adb5bd" />
+                    {yAxisLabels.map(label => (
+                        <g key={`y-label-${label}`}>
+                           <text x={padding.left - 10} y={yScale(label) + 4} textAnchor="end" className="chart-label">{label}%</text>
+                           {label > 0 && <line x1={padding.left} x2={width - padding.right} y1={yScale(label)} y2={yScale(label)} stroke="#e9ecef" strokeDasharray="2 2"/>}
+                        </g>
+                    ))}
+                    <text transform={`translate(${padding.left / 3}, ${height/2}) rotate(-90)`} textAnchor="middle" className="chart-label">Allocation %</text>
+
+                    <line x1={padding.left} y1={padding.top + chartHeight} x2={width - padding.right} y2={padding.top + chartHeight} stroke="#adb5bd" />
+                    {xAxisLabels.map(label => (
+                        <g key={`x-label-${label}`}>
+                            <text x={xScale(label)} y={padding.top + chartHeight + 25} textAnchor="middle" className="chart-label">{label}</text>
+                        </g>
+                    ))}
+                    <text x={width/2} y={height - 10} textAnchor="middle" className="chart-label">Child's Age</text>
+                </g>
+
+                <g className="chart-areas">
+                    {renderOrder.map(key => {
+                        const s = series.find(s => s.key === key);
+                        if (!s) return null;
+                        return (
+                            <path 
+                              key={s.name} 
+                              d={getAreaPath(data, key)} 
+                              fill={s.color}
+                              fillOpacity="0.7"
+                              stroke={s.color} 
+                              strokeWidth="2" 
+                              strokeDasharray="3 3"
+                            />
+                        );
+                    })}
+                </g>
+            </svg>
+            <div className="chart-legend">
+                {legendSeries.map(s => (
+                    <div key={s.name} className="legend-item">
+                        <span className="legend-color-box" style={{ backgroundColor: s.color }}></span>
+                        <span>{s.name}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
+// --- Main App Component ---
+
+const App = () => {
+    const [childAge, setChildAge] = useState(5);
+    const [goal, setGoal] = useState('iit');
+    const [customGoalAmount, setCustomGoalAmount] = useState(2500000);
+    const [calculationResult, setCalculationResult] = useState<{ futureCost: number, sipNeeded: number } | null>(null);
+
+    const GOALS = useMemo(() => ({
+        iit: { name: 'IIT/Tier-1 College', currentCost: 1200000 },
+        medical: { name: 'Medical College', currentCost: 2000000 },
+        foreign: { name: 'Foreign University', currentCost: 5000000 },
+        custom: { name: 'Custom Goal', currentCost: customGoalAmount }
+    }), [customGoalAmount]);
+
+    const calculateInvestment = useCallback(() => {
+        const currentCostForCalc = goal === 'custom' 
+            ? customGoalAmount 
+            : GOALS[goal as keyof typeof GOALS].currentCost;
+
+        const result = calculateEducationCorpus({
+            currentAge: childAge,
+            currentCost: currentCostForCalc,
+        });
+        setCalculationResult(result);
+    }, [childAge, goal, customGoalAmount, GOALS]);
+    
+    // Set an initial calculation
+    React.useEffect(() => {
+        calculateInvestment();
+    }, [calculateInvestment]);
+
+    return (
+        <div className="app-container">
+            <header className="header">
+                <div className="header-content">
+                    <div className="logo">
+                       <Logo />
+                    </div>
+                    <button className="cta-button">Start Investing</button>
+                </div>
+            </header>
+            
+            <main>
+                <section className="section hero">
+                    <div className="hero-text">
+                        <h1>Give your child the future they deserve - strong, secure, and without compromise.</h1>
+                        <p>Plan and grow a dedicated education wealth corpus for your child’s future – with expert guidance and zero stress.</p>
+                        <button className="cta-button">Build Their Tomorrow</button>
+                        <p className="hero-social-proof">Trusted by 10,000+ parents</p>
+                    </div>
+                    <div className="hero-illustration">
+                         <FutureGrowthIllustration />
+                    </div>
+                </section>
+                
+                 <section className="section trust-signals">
+                    <h2>Your Trust is Our Foundation</h2>
+                    <div className="badges">
+                        <div className="badge">
+                            <SecurityIcon />
+                            <span>Invest with SEBI registered AMCs</span>
+                        </div>
+                         <div className="badge">
+                            <SecurityIcon />
+                            <span>Secure MF Investments</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="section how-it-works-section">
+                    <h2>How It Works</h2>
+                    <p className="section-subtitle">A simple, 3-step path to securing your child's education.</p>
+                    <div className="how-it-works-steps">
+                        <div className="how-it-works-step">
+                            <div className="step-number">1</div>
+                            <div className="step-icon"><PlanIcon /></div>
+                            <h3>Plan Your Goal</h3>
+                            <p>Use our free planner to estimate the future cost of education and the investment required.</p>
+                        </div>
+                        <div className="how-it-works-step">
+                            <div className="step-number">2</div>
+                            <div className="step-icon"><ConsultIcon /></div>
+                            <h3>Get Expert Advice</h3>
+                            <p>Book a free consultation with our SEBI-registered advisors to create a personalized investment map.</p>
+                        </div>
+                        <div className="how-it-works-step">
+                            <div className="step-number">3</div>
+                            <div className="step-icon"><InvestIcon /></div>
+                            <h3>Invest & Track</h3>
+                            <p>Start your SIP, and track your corpus growth anytime, anywhere. We'll handle the rest.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="section cost-escalation-section">
+                    <h2>Why Starting Early is Non-Negotiable</h2>
+                    <p className="section-subtitle">Rising education costs are outgrowing savings.</p>
+                    <div className="cost-reality-content">
+                        <div className="planning-pitfalls">
+                            <div className="pitfalls-header">
+                                <AlertTriangleIcon />
+                                <h3>Common Planning Hurdles</h3>
+                            </div>
+                            <ul>
+                                <li>
+                                    <CheckCircleIcon />
+                                    <span><strong>The Inflation Trap:</strong> Education costs inflate at 10-12% annually, far outpacing typical savings instruments like FDs or traditional insurance.</span>
+                                </li>
+                                <li>
+                                    <CheckCircleIcon />
+                                    <span><strong>Suboptimal Investments:</strong> Many "child plans" from insurance companies offer low returns (5-6%), creating a significant corpus shortfall over the long term.</span>
+                                </li>
+                                <li>
+                                    <CheckCircleIcon />
+                                    <span><strong>The Cost of Delay:</strong> The later you start, the exponentially higher your monthly investment needs to be to reach the same goal. Time is your greatest asset.</span>
+                                </li>
+                                <li>
+                                    <CheckCircleIcon />
+                                    <span><strong>Don’t gamble with your child’s future:</strong> DIY investing often falls short - expert guidance helps you build the security they deserve.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="cost-table-container">
+                             <h3 className="table-title">IIT B.Tech Tuition: A History of Growth</h3>
+                             <table className="cost-table">
+                                 <thead>
+                                     <tr>
+                                         <th>Time Period</th>
+                                         <th>Approx. Annual Tuition</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     <tr><td>Before 1998</td><td>₹500 per year</td></tr>
+                                     <tr><td>1998</td><td>Increased to ~₹25,000/year</td></tr>
+                                     <tr><td>2008</td><td>Doubled to ~₹50,000/year</td></tr>
+                                     <tr><td>~2017-2018</td><td>Around ₹2 lakh/year</td></tr>
+                                     <tr><td>~2024</td><td>Around ₹2.5 - ₹3 lakh/year</td></tr>
+                                     <tr><td><strong>Full 4-Year Cost (Today)</strong></td><td><strong>₹10–12 lakh+ (tuition only)</strong></td></tr>
+                                 </tbody>
+                             </table>
+                             <p className="table-caption">In under 30 years, costs have multiplied over 500x. The future trend is clear.</p>
+                        </div>
+                    </div>
+                 </section>
+
+                <section className="section journey-visual">
+                    <h2>Future Education Costs At a Glance</h2>
+                    <p className="light-text" style={{maxWidth: '600px', margin: '-2rem auto 3rem auto'}}>Future costs are projected for the next 10 years, highlighting the need for early planning.</p>
+                    <div className="cost-cards">
+                        <div className="cost-card">
+                            <GraduationCapIcon />
+                            <h3>IIT/Tier-1 College</h3>
+                            <p className="cost">₹50-70 Lakhs</p>
+                            <p className="note">For a 4-year B.Tech program</p>
+                        </div>
+                        <div className="cost-card">
+                            <StethoscopeIcon />
+                            <h3>Medical Dreams</h3>
+                            <p className="cost">₹1 Crore</p>
+                            <p className="note">For a 5-year MBBS program</p>
+                        </div>
+                        <div className="cost-card">
+                            <GlobeIcon />
+                            <h3>Study Abroad</h3>
+                            <p className="cost">₹3-5 Crores</p>
+                            <p className="note">For a Masters program in the US/UK</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section className="section corpus-builder-section">
+                     <div className="corpus-builder">
+                        <h2>Free Child Education Cost Planner</h2>
+                        <p className="section-subtitle" style={{marginTop: '-1.5rem'}}>Estimate the future cost and the investment needed to reach your goal.</p>
+                        <div className="calculator">
+                            <div className="form-group">
+                                <label>Select Your Goal</label>
+                                <div className="goal-options">
+                                    {Object.entries(GOALS).map(([key, { name }]) => (
+                                        <div key={key} className={`goal-option ${goal === key ? 'selected' : ''}`} onClick={() => setGoal(key)}>
+                                            <p>{name}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {goal === 'custom' && (
+                                <div className="form-group">
+                                    <label>Current Cost of Education: ₹{customGoalAmount.toLocaleString('en-IN')}</label>
+                                    <div className="age-slider-group">
+                                        <input 
+                                            type="range" 
+                                            min="500000" 
+                                            max="10000000" 
+                                            step="100000" 
+                                            value={customGoalAmount} 
+                                            onChange={(e) => setCustomGoalAmount(parseInt(e.target.value))} 
+                                        />
+                                        {/* This placeholder ensures the slider aligns with the age slider below it */}
+                                        <span aria-hidden="true" style={{ minWidth: '70px' }}></span>
+                                    </div>
+                                </div>
+                            )}
+
+                             <div className="form-group">
+                                <label>Your Child's Current Age</label>
+                                <div className="age-slider-group">
+                                   <input 
+                                      type="range" 
+                                      min="1" 
+                                      max="18" 
+                                      value={childAge} 
+                                      onChange={(e) => setChildAge(parseInt(e.target.value))}
+                                  />
+                                  <span>{childAge} years</span>
+                                </div>
+                            </div>
+                            
+                            <button className="cta-button" onClick={calculateInvestment} style={{margin: '0 auto'}}>Calculate Now</button>
+
+                             {calculationResult !== null && (
+                                <div className="calculator-result">
+                                    {calculationResult.sipNeeded === Infinity ? (
+                                        <p>The goal age has been reached. Planning should have started earlier.</p>
+                                    ) : (
+                                        <>
+                                            <p>Future Goal Amount (at age 18): <strong className="future-cost-amount">₹{calculationResult.futureCost.toLocaleString('en-IN')}</strong></p>
+                                            <p>Required Monthly Investment:</p>
+                                            <p className="amount">₹{calculationResult.sipNeeded.toLocaleString('en-IN')}</p>
+                                            <p className="sip-frequency-note">Set your SIP your way - daily, weekly, or monthly.</p>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="section why-nested-section">
+                    <h2>Go Beyond Just Saving. Invest with a Plan.</h2>
+                    <p className="section-subtitle">Successful education planning requires more than just putting money aside. It needs a dedicated strategy and expert guidance.</p>
+                    <div className="benefits-container">
+                        <div className="benefit-card">
+                            <ProtectedGrowthIcon />
+                            <h3>A Dedicated, Ring-Fenced Account</h3>
+                            <p>A separate education corpus ensures the funds you save are protected and used solely for your child's future, preventing accidental spending on other needs.</p>
+                        </div>
+                        <div className="benefit-card">
+                            <DataDrivenMindIcon />
+                            <h3>Expert Advice, Not Guesswork</h3>
+                            <p>Our SEBI-registered advisors help you navigate the complexities of investing, ensuring you choose the right products to build wealth effectively and avoid costly mistakes.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section className="section asset-allocation-section">
+                    <h2>Smart Asset Allocation for Your Child’s Future</h2>
+                    <div className="allocation-intro">
+                        <p>Saving alone isn’t enough - where you invest matters just as much. We use a structured framework to recommend the right mix of equity and debt depending on:</p>
+                        <div className="allocation-points">
+                           <p>✔️ Your child’s current age (time left until the goal)</p>
+                           <p>✔️ Your comfort with volatility (risk appetite)</p>
+                        </div>
+                        <p>This ensures your portfolio is not only tailored to your child’s needs but also dynamically balanced between growth and safety.</p>
+                    </div>
+                    <AssetAllocationChart />
+                </section>
+
+                <section className="section investment-journey-section">
+                    <h2>Your Child's Investment Journey</h2>
+                    <div className="journey-scroll-container">
+                        <div className="journey-steps">
+                            <div className="journey-step">
+                                <div className="journey-icon-wrapper"><TargetIcon/></div>
+                                <div className="age-range">0-5 years</div>
+                                <h3>Early Planning</h3>
+                                <p>Start building the foundation with small, consistent investments.</p>
+                                <div className="investment-range">₹5K-10K/month</div>
+                            </div>
+                            <div className="journey-arrow">→</div>
+                            <div className="journey-step">
+                                <div className="journey-icon-wrapper"><GraphUpIcon/></div>
+                                <div className="age-range">6-12 years</div>
+                                <h3>Growth Phase</h3>
+                                <p>Increase contributions as your income grows to accelerate the corpus.</p>
+                                 <div className="investment-range">₹15K-25K/month</div>
+                            </div>
+                            <div className="journey-arrow">→</div>
+                            <div className="journey-step">
+                                 <div className="journey-icon-wrapper"><CalendarIcon/></div>
+                                 <div className="age-range">13-17 years</div>
+                                <h3>Final Sprint</h3>
+                                <p>Maximize corpus before college admission, de-risking the portfolio.</p>
+                                 <div className="investment-range">₹30K-50K/month</div>
+                            </div>
+                            <div className="journey-arrow">→</div>
+                            <div className="journey-step">
+                                <div className="journey-icon-wrapper"><DollarIcon/></div>
+                                <div className="age-range">18+ years</div>
+                                <h3>Education Ready</h3>
+                                <p>Corpus is ready for any dream college, ensuring a loan-free future.</p>
+                                 <div className="investment-range available">₹1-5Cr Available</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="section testimonials-section">
+                    <h2>What Parents Say About Us</h2>
+                    <div className="testimonials-grid">
+                        <div className="testimonial-card">
+                            <div className="testimonial-quote-icon"><QuoteIcon /></div>
+                            <p className="testimonial-text">"NestEd made planning for my daughter's IIT dream so simple. The asset allocation chart was an eye-opener. I finally feel in control."</p>
+                            <p className="testimonial-author">- Priya S., Bengaluru</p>
+                        </div>
+                        <div className="testimonial-card">
+                            <div className="testimonial-quote-icon"><QuoteIcon /></div>
+                            <p className="testimonial-text">"The 'ring-fenced' account concept gave me peace of mind. I know this money is untouchable for anything other than my son's college education. Highly recommend!"</p>
+                            <p className="testimonial-author">- Amit R., Mumbai</p>
+                        </div>
+                        <div className="testimonial-card">
+                             <div className="testimonial-quote-icon"><QuoteIcon /></div>
+                            <p className="testimonial-text">"I was lost in a sea of child plans with poor returns. The expert consultation helped me switch to a much better mutual fund portfolio. The clarity is priceless."</p>
+                            <p className="testimonial-author">- Sunita K., Delhi</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="section faq-section">
+                    <h2>Frequently Asked Questions</h2>
+                    <div className="faq-container">
+                        <details className="faq-item">
+                            <summary>Is my money safe?</summary>
+                            <p>Yes. Your money is invested directly with SEBI-registered Asset Management Companies (AMCs) like HDFC, ICICI, etc. NestEd is a platform that facilitates these investments and does not hold your money.</p>
+                        </details>
+                        <details className="faq-item">
+                            <summary>What are the charges?</summary>
+                            <p>We believe in transparency. We charge a small advisory fee based on your investment amount. There are no hidden charges, transaction fees, or commissions on any mutual funds.</p>
+                        </details>
+                        <details className="faq-item">
+                            <summary>Can I withdraw money anytime?</summary>
+                            <p>Yes, since your investments are in open-ended mutual funds, you can withdraw your money at any time. However, we advise staying invested for the long term to achieve your child's education goal effectively.</p>
+                        </details>
+                        <details className="faq-item">
+                            <summary>What if I want to stop my SIP?</summary>
+                            <p>You have complete flexibility. You can pause, stop, or modify your SIP amount anytime you want through your dashboard without any penalties.</p>
+                        </details>
+                    </div>
+                </section>
+                
+                <section className="section cta-section">
+                    <div className="cta-section-icon"><CalendarCheckIcon /></div>
+                    <h2>Ready for a Clear Path Forward?</h2>
+                    <p className="section-subtitle">Let our experts help you calculate the exact corpus you need for your child's future.</p>
+                    <button className="cta-button">Book Your Free 15-Min Consult</button>
+                </section>
+
+                <section className="section newsletter-section">
+                    <div className="newsletter-icon"><MailIcon /></div>
+                    <h2>Get Sharp, Bite-Sized Advice</h2>
+                    <p className="section-subtitle">Join our newsletter or WhatsApp group for tips on building your child's education wealth.</p>
+                    <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+                        <input type="text" placeholder="Enter your email or WhatsApp number" />
+                        <button type="submit" className="cta-button">Subscribe</button>
+                    </form>
+                </section>
+            </main>
+            <footer className="footer">
+                <p>&copy; {new Date().getFullYear()} NestEd. All rights reserved. Invest in Dreams Without Loans.</p>
+            </footer>
+        </div>
+    );
+};
+
+const container = document.getElementById('root');
+if (container) {
+    const root = createRoot(container);
+    root.render(<React.StrictMode><App /></React.StrictMode>);
+}
